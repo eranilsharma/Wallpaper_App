@@ -11,8 +11,12 @@ import android.widget.TextView;
 
 import com.android.wallpaperapp.R;
 import com.android.wallpaperapp.activities.allImageActivity;
+import com.android.wallpaperapp.activities.loadAds;
 import com.android.wallpaperapp.model.MainCategoryImagesModel;
 import com.flaviofaria.kenburnsview.KenBurnsView;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.InterstitialAd;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -25,7 +29,7 @@ public class MainCategoryDataAdapter extends RecyclerView.Adapter<MainCategoryDa
 
     private ArrayList<MainCategoryImagesModel> categoryImagesModels;
     private Context context;
-
+    private InterstitialAd interstitial;
     public MainCategoryDataAdapter(Context context, ArrayList<MainCategoryImagesModel> categoryImages) {
         this.categoryImagesModels = categoryImages;
         this.context = context;
@@ -44,6 +48,18 @@ public class MainCategoryDataAdapter extends RecyclerView.Adapter<MainCategoryDa
         holder.img_category_image.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                AdRequest adRequest = new AdRequest.Builder().build();
+                interstitial = new InterstitialAd(context);
+                // Insert the Ad Unit ID
+                interstitial.setAdUnitId(context.getString(R.string.admob_interstitial_id));
+                interstitial.loadAd(adRequest);
+                // Prepare an Interstitial Ad Listener
+                interstitial.setAdListener(new AdListener() {
+                    public void onAdLoaded() {
+                        // Call displayInterstitial() function
+                        displayInterstitial();
+                    }
+                });
                 Intent intent=new Intent(context,allImageActivity.class);
                 intent.putExtra("category",categoryImagesModels.get(position).getCategory_name());
                 context.startActivity(intent);
@@ -52,6 +68,12 @@ public class MainCategoryDataAdapter extends RecyclerView.Adapter<MainCategoryDa
 
     }
 
+    public void displayInterstitial() {
+// If Ads are loaded, show Interstitial else show nothing.
+        if (interstitial.isLoaded()) {
+            interstitial.show();
+        }
+    }
     @Override
     public int getItemCount() {
         return categoryImagesModels.size();

@@ -17,6 +17,9 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.android.wallpaperapp.R;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.InterstitialAd;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
@@ -28,8 +31,9 @@ public class FullScreenImageActivity extends AppCompatActivity {
 
     ImageView full_screen_image;
     String imageurl;
-    Button btnsetwallpaper, btndownload,btnShare;
+    Button btnsetwallpaper, btndownload, btnShare;
     private static final int REQUEST_WRITE_PERMISSION = 1;
+    private InterstitialAd interstitial;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -38,23 +42,25 @@ public class FullScreenImageActivity extends AppCompatActivity {
 
         }
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_full_screen_iamge);
-        full_screen_image=(ImageView)findViewById(R.id.full_screen_image);
+        full_screen_image = (ImageView) findViewById(R.id.full_screen_image);
         btndownload = (Button) findViewById(R.id.btndownload);
         btnsetwallpaper = (Button) findViewById(R.id.btnsetwallpaper);
-        btnShare=(Button)findViewById(R.id.btnshare);
+        btnShare = (Button) findViewById(R.id.btnshare);
 
-        Intent intent=getIntent();
-        imageurl=intent.getStringExtra("imageurl");
+        Intent intent = getIntent();
+        imageurl = intent.getStringExtra("imageurl");
 
         Picasso.with(FullScreenImageActivity.this).load(imageurl).placeholder(R.drawable.loading_image).into(full_screen_image);
 
         btndownload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                loadAds();
                 requestPermission();
 
             }
@@ -62,13 +68,14 @@ public class FullScreenImageActivity extends AppCompatActivity {
         btnsetwallpaper.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                loadAds();
                 setwallpaper();
             }
         });
         btnShare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                loadAds();
                 shareImage(imageurl);
             }
         });
@@ -154,23 +161,32 @@ public class FullScreenImageActivity extends AppCompatActivity {
                       }
                 );
     }
+
     public void shareImage(String url) {
         Picasso.with(getApplicationContext()).load(url).into(new Target() {
-            @Override public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+            @Override
+            public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
                 Intent i = new Intent(Intent.ACTION_SEND);
                 i.setType("image/*");
                 i.putExtra(Intent.EXTRA_STREAM, getLocalBitmapUri(bitmap));
-                i.putExtra(Intent.EXTRA_TEXT,"");
+                i.putExtra(Intent.EXTRA_TEXT, "");
                 startActivity(Intent.createChooser(i, "Share Image..."));
             }
-            @Override public void onBitmapFailed(Drawable errorDrawable) { }
-            @Override public void onPrepareLoad(Drawable placeHolderDrawable) { }
+
+            @Override
+            public void onBitmapFailed(Drawable errorDrawable) {
+            }
+
+            @Override
+            public void onPrepareLoad(Drawable placeHolderDrawable) {
+            }
         });
     }
+
     public Uri getLocalBitmapUri(Bitmap bmp) {
         Uri bmpUri = null;
         try {
-            File file =  new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "share_image_" + System.currentTimeMillis() + ".png");
+            File file = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "share_image_" + System.currentTimeMillis() + ".png");
             FileOutputStream out = new FileOutputStream(file);
             bmp.compress(Bitmap.CompressFormat.JPEG, 90, out);
             out.close();
@@ -181,4 +197,25 @@ public class FullScreenImageActivity extends AppCompatActivity {
         return bmpUri;
     }
 
+    public void loadAds() {
+        AdRequest adRequest = new AdRequest.Builder().build();
+        interstitial = new InterstitialAd(FullScreenImageActivity.this);
+        // Insert the Ad Unit ID
+        interstitial.setAdUnitId(getString(R.string.admob_interstitial_id));
+        interstitial.loadAd(adRequest);
+        // Prepare an Interstitial Ad Listener
+        interstitial.setAdListener(new AdListener() {
+            public void onAdLoaded() {
+                // Call displayInterstitial() function
+                displayInterstitial();
+            }
+        });
+    }
+
+    public void displayInterstitial() {
+// If Ads are loaded, show Interstitial else show nothing.
+        if (interstitial.isLoaded()) {
+            interstitial.show();
+        }
+    }
 }
